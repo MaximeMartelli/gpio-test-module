@@ -1,4 +1,4 @@
-rotation-sensor-module
+gpio-test-module
 ======================
 
-Linux kernel module for dealing with rotating incremental encoders
+Module kernel Linux afin de tester le fonctionnement des GPIOs
