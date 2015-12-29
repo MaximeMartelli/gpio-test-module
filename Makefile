@@ -1,6 +1,6 @@
 ifneq (${KERNELRELEASE},)
 
-	obj-m  = gpio-test.o
+	obj-m  = rotation-sensor.o
 else
 
 	KERNELDIR        ?= /lib/modules/$(shell uname -r)/build
