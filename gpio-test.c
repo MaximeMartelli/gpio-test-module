@@ -188,3 +188,6 @@ void __exit rotation_sensor_exit (void)
 
 module_init(rotation_sensor_init);
 module_exit(rotation_sensor_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Maxime MARTELLI");
