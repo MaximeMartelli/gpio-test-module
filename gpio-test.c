@@ -23,6 +23,10 @@
 
 static struct timer_list gpio_test_timer;
 
+volatile unsigned *gpio;
+volatile unsigned *pwm;
+volatile unsigned *clk;
+
 
 static void setServo(int percent)
 {
