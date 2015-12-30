@@ -17,7 +17,7 @@ static void rpi_gpio_1_function (unsigned long unused)
   value = 1 - value;
   if (gpio_get_value(RPI_GPIO_IN) == 0)
     value = 0;
-  gpio_set_value(RPI_GPIO_OUT, value);
+  gpio_set_value(RPI_GPIO_OUT, 1);
   mod_timer(& rpi_gpio_1_timer, jiffies+ (HZ >> 3));
 }
 
