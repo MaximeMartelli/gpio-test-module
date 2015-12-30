@@ -11,25 +11,9 @@
 
 static int __init rpi_gpio_1_init (void)
 {
-  int err;
-
-  if ((err = gpio_request(RPI_GPIO_IN,THIS_MODULE->name)) != 0)
-    return err;
-  if ((err = gpio_request(RPI_GPIO_OUT,THIS_MODULE->name)) != 0) {
-    gpio_free(RPI_GPIO_IN);
-    return err;
-  }
-  if ((err = gpio_direction_input(RPI_GPIO_IN)) != 0) {
-    gpio_free(RPI_GPIO_OUT);
-    gpio_free(RPI_GPIO_IN);
-    return err;
-  }
-  if ((err = gpio_direction_output(RPI_GPIO_OUT,1)) != 0) {
-    gpio_free(RPI_GPIO_OUT);
-    gpio_free(RPI_GPIO_IN);
-    return err;
-  }
+  printk(KERN_INFO "%s : HELLO \n", THIS_MODULE->name);
   gpio_set_value(RPI_GPIO_OUT, 1);
+  
   return 0; 
 }
 
