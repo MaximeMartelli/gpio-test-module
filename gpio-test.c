@@ -31,20 +31,23 @@
 int major = MAJOR(inode->i_redev);*/
 
 
-
-/*static void gpio_test_function (unsigned long unused)
-{
-  static int value = 1;
-  value = 1 - value;
-  if (gpio_get_value(RPI_GPIO_IN) == 0)
-    value = 0;
-  gpio_set_value(RPI_GPIO_OUT, value);
-  mod_timer(& gpio_test_timer, jiffies+ (HZ >> 3));
-}
-*/
+static int gpio_test_init (struct inode *inode, struct file *file);
+static int gpio_test_exit (struct inode *inode, struct file *file);
+static ssize_t gpio_test_read (struct file *file, const char *buf, size_t count, loff_t *ppos);
+static ssize_t gpio_test_write (struct file *file, const char *buf, size_t count, loff_t *ppos);
 
 
-static int __init gpio_test_init (struct inode *inode, struct file *file)
+/* File operation structure */
+static struct file_operations fops = {
+	.open = gpio_test_init, 
+	.release = gpio_test_exit, 
+	.read = gpio_test_read, 
+	.write = gpio_test_write,
+};
+
+
+
+static int gpio_test_init (struct inode *inode, struct file *file)
 {
   int err;
   
@@ -74,7 +77,7 @@ static int __init gpio_test_init (struct inode *inode, struct file *file)
   return 0; 
 }
 
-static int __exit gpio_test_exit (struct inode *inode, struct file *file)
+static int gpio_test_exit (struct inode *inode, struct file *file)
 {
     gpio_free(RPI_GPIO_1);
     gpio_free(RPI_GPIO_2);
@@ -104,13 +107,7 @@ static ssize_t gpio_test_write (struct file *file, const char *buf, size_t count
 	return 0;
 }
 
-/* File operation structure */
-static struct file_operations fops = {
-	.open = gpio_test_init, 
-	.release = gpio_test_exit, 
-	.read = gpio_test_read, 
-	.write = gpio_test_write,
-};
+
 
 module_init(gpio_test_init);
 module_exit(gpio_test_exit);
