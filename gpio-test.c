@@ -25,7 +25,7 @@ static struct timer_list gpio_test_timer;
 
 
 
-
+/*
 static void setServo(int percent)
 {
 	int bitCount;
@@ -43,7 +43,7 @@ static void setServo(int percent)
 	}
 	*(pwm + PWM_DAT1) = bits;
 }
-
+*/
 
 
 static void gpio_test_function (unsigned long unused)
