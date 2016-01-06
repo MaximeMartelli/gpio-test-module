@@ -13,10 +13,10 @@
 #define RPI_GPIO_3  27
 #define RPI_GPIO_4  22
 
-
+/*
 #define BCM2708_PERI_BASE 	0x20000000
-#define GPIO_BASE 			(BCM2708_PERI_BASE + 0x200000) /* Controleur GPIO*/
-#define PWM_BASE 			(BCM2708_PERI_BASE + 0x20C000) /* Controleur PWM*/
+#define GPIO_BASE 			(BCM2708_PERI_BASE + 0x200000) 
+#define PWM_BASE 			(BCM2708_PERI_BASE + 0x20C000) 
 #define CLOCK_BASE 			(BCM2708_PERI_BASE + 0x101000) 
 
 #define PWM_CTL		0x0
@@ -24,11 +24,11 @@
 #define PWM_DAT1	0x14
 
 #define PWMCLK_CNTL	40
-#define PWMCLK_DIV	41
+#define PWMCLK_DIV	41*/
 
 
 /*int minor = MINOR(inode->i_redev);
-int major = MAJOR(inode->i_redev);*/
+*/
 
 
 static int gpio_test_init (struct inode *inode, struct file *file);
@@ -50,7 +50,7 @@ static struct file_operations fops = {
 static int gpio_test_init (struct inode *inode, struct file *file)
 {
   int err;
-  
+  int major = MAJOR(inode->i_redev);
   int ret;
   ret = register_chrdev(major, "gpio-test",&fops);
 
@@ -83,6 +83,8 @@ static int gpio_test_exit (struct inode *inode, struct file *file)
     gpio_free(RPI_GPIO_2);
     gpio_free(RPI_GPIO_3);
     gpio_free(RPI_GPIO_4);
+
+  	int major = MAJOR(inode->i_redev);
 
 	unregister_chrdev(major, "gpio-test");
 
