@@ -50,7 +50,7 @@ static struct file_operations fops = {
 static int gpio_test_init (struct inode *inode, struct file *file)
 {
   int err;
-  int major = MAJOR(inode->i_redev);
+  int major = MAJOR(inode->i_rdev);
   int ret;
   ret = register_chrdev(major, "gpio-test",&fops);
 
@@ -84,7 +84,7 @@ static int gpio_test_exit (struct inode *inode, struct file *file)
     gpio_free(RPI_GPIO_3);
     gpio_free(RPI_GPIO_4);
 
-  	int major = MAJOR(inode->i_redev);
+  	int major = MAJOR(inode->i_rdev);
 
 	unregister_chrdev(major, "gpio-test");
 
@@ -103,7 +103,6 @@ static ssize_t gpio_test_read (struct file *file, const char *buf, size_t count,
 
 static ssize_t gpio_test_write (struct file *file, const char *buf, size_t count, loff_t *ppos)
 {
-
 
 	printk("Driver write\n");
 	return 0;
