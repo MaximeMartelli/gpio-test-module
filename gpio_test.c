@@ -52,7 +52,7 @@ static int gpio_test_init (struct inode *inode, struct file *file)
   int err;
   int major = MAJOR(inode->i_rdev);
   int ret;
-  ret = register_chrdev(major, "gpio-test",&fops);
+  ret = register_chrdev(major, "gpio_test",&fops);
 
   if ((err = gpio_request(RPI_GPIO_1,THIS_MODULE->name)) != 0)
     return err;
@@ -86,7 +86,7 @@ static int gpio_test_exit (struct inode *inode, struct file *file)
 
   	int major = MAJOR(inode->i_rdev);
 
-	unregister_chrdev(major, "gpio-test");
+	unregister_chrdev(major, "gpio_test");
 
   	printk("Driver perso supprimé\n");
 
