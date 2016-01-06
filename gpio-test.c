@@ -14,18 +14,16 @@
 #define PWM_BASE 			(BCM2708_PERI_BASE + 0x20C000) /* Controleur PWM*/
 #define CLOCK_BASE 			(BCM2708_PERI_BASE + 0x101000) 
 
-#define PWM_CTL		0
-#define PWM_RNG1	4
-#define PWM_DAT1	5
+#define PWM_CTL		0x0
+#define PWM_RNG1	0x10
+#define PWM_DAT1	0x14
 
 #define PWMCLK_CNTL	40
 #define PWMCLK_DIV	41
 
 static struct timer_list gpio_test_timer;
 
-volatile unsigned *gpio;
-volatile unsigned *pwm;
-volatile unsigned *clk;
+
 
 
 static void setServo(int percent)
@@ -85,8 +83,12 @@ static int __init gpio_test_init (void)
   gpio_test_timer.expires = jiffies + (HZ >> 3);
   add_timer(& gpio_test_timer);
   
+  /*
   // Active le mode PWM pour le pin 18
   SET_GPIO_ALT(18,5);
+  //GPFSEL1 = 010; Bit 26-24, décalage de 24, y mettre 010 (fonction 5), correspondant à 2 << 24
+  // GPFSEL1 est à l'adresse 0x7E200004
+  
   // Kill clock
   *(clk + PWMCLK_CNTL) = 0x5A000000 | (1 << 5);
   usleep(10);
@@ -118,7 +120,7 @@ static int __init gpio_test_init (void)
 	setServo(0);
 	
 	// start PWM1 in serializer mode
-	*(pwm + PWM_CTL) = 3;
+	*(pwm + PWM_CTL) = 3;*/
 
   return 0; 
 }
