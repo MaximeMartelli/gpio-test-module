@@ -43,21 +43,6 @@ static struct file_operations fops = {
 };
 
 
-
-
-
-static void gpio_test_function (unsigned long unused)
-{
-  static int value = 1;
-  value = 1 - value;
-  if (gpio_get_value(RPI_GPIO_IN) == 0)
-    value = 0;
-  gpio_set_value(RPI_GPIO_OUT, value);
-  mod_timer(& gpio_test_timer, jiffies+ (HZ >> 3));
-}
-
-
-
 static int __init gpio_test_init (struct inode *inode, struct file *file)
 {
   int err;
