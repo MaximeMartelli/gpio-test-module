@@ -9,9 +9,9 @@
 
 // GPIO sur broche 16 (GPIO 23)
 #define RPI_GPIO_1  23
-#define RPI_GPIO_2  24
-#define RPI_GPIO_3  27
-#define RPI_GPIO_4  22
+#define RPI_GPIO_2  23
+#define RPI_GPIO_3  23
+#define RPI_GPIO_4  23
 
 /*
 #define BCM2708_PERI_BASE 	0x20000000
@@ -31,8 +31,8 @@
 */
 
 
-static int gpio_test_init (struct inode *inode, struct file *file);
-static int gpio_test_exit (struct inode *inode, struct file *file);
+static ssize_t gpio_test_init (struct inode *inode, struct file *file);
+static ssize_t gpio_test_exit (struct inode *inode, struct file *file);
 static ssize_t gpio_test_read (struct file *file, const char *buf, size_t count, loff_t *ppos);
 static ssize_t gpio_test_write (struct file *file, const char *buf, size_t count, loff_t *ppos);
 
@@ -47,8 +47,10 @@ static struct file_operations fops = {
 
 
 
-static int gpio_test_init (struct inode *inode, struct file *file)
+static ssize_t __int gpio_test_init (struct inode *inode, struct file *file)
 {
+  printk("Driver perso ajouté\n");
+/*
   int err;
   int major = MAJOR(inode->i_rdev);
   int ret;
@@ -71,13 +73,12 @@ static int gpio_test_init (struct inode *inode, struct file *file)
     gpio_free(RPI_GPIO_3);
     return err;
   }
-  
-  printk("Driver perso ajouté\n");
+  */
 
   return 0; 
 }
 
-static int gpio_test_exit (struct inode *inode, struct file *file)
+static ssize_t __exit gpio_test_exit (struct inode *inode, struct file *file)
 {
     gpio_free(RPI_GPIO_1);
     gpio_free(RPI_GPIO_2);
