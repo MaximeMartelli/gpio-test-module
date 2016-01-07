@@ -402,6 +402,8 @@ rpigpio_minit(void)
 	pwm_reg[PWM_CTL] = PWMCTL_USEF1 | PWMCTL_PWEN1;
 	udelay(10);
 
+	printk(KERN_INFO "[pwm] %s Installed\n", RPIGPIO_MOD_NAME);
+
 	return 0;
 }
 
