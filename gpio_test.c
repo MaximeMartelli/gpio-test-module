@@ -46,7 +46,17 @@
 #define PWMCTL_CLRF		(1<<6)
 #define PWMCTL_USEF1	(1<<5)
 
+#define PWMDMAC_ENAB	(1<<31)
+// I think this means it requests as soon as there is one free slot in the FIFO
+// which is what we want as burst DMA would mess up our timing..
+#define PWMDMAC_THRSHLD	((15<<8)|(15<<0))
 
+#define DMA_CS			(BCM2708_DMA_CS/4)
+#define DMA_CONBLK_AD	(BCM2708_DMA_ADDR/4)
+#define DMA_DEBUG		(BCM2708_DMA_DEBUG/4)
+
+#define BCM2708_DMA_END				(1<<1)	// Why is this not in mach/dma.h ?
+#define BCM2708_DMA_NO_WIDE_BURSTS	(1<<26)
 
 #define GPIO_IOC_MAGIC 'k'
 
@@ -359,6 +369,8 @@ rpigpio_minit(void)
 	}
 	printk(KERN_INFO "[gpio] %s Installed\n", RPIGPIO_MOD_NAME);
 
+	static int tick_scale = 6;
+
 	gpio_reg = (uint32_t *)ioremap(GPIO_BASE, GPIO_LEN);
 	dma_reg  = (uint32_t *)ioremap(DMA_BASE,  DMA_LEN);
 	clk_reg  = (uint32_t *)ioremap(CLK_BASE,  CLK_LEN);
@@ -382,7 +394,7 @@ rpigpio_minit(void)
 
 	pwm_reg[PWM_RNG1] = tick_scale;				// 600KHz/6 = 10us per FIFO write
 	udelay(10);
-	ctl->pwmdata = 1;					// Give a pulse of one clock width for each fifo write
+	//ctl->pwmdata = 1;					// Give a pulse of one clock width for each fifo write
 	pwm_reg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
 	udelay(10);
 	pwm_reg[PWM_CTL] = PWMCTL_CLRF;
