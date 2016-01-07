@@ -47,7 +47,7 @@ static struct file_operations fops = {
 
 
 
-static ssize_t __int gpio_test_init (struct inode *inode, struct file *file)
+static ssize_t gpio_test_init (struct inode *inode, struct file *file)
 {
   printk("Driver perso ajouté\n");
 /*
@@ -78,7 +78,7 @@ static ssize_t __int gpio_test_init (struct inode *inode, struct file *file)
   return 0; 
 }
 
-static ssize_t __exit gpio_test_exit (struct inode *inode, struct file *file)
+static ssize_t gpio_test_exit (struct inode *inode, struct file *file)
 {
     gpio_free(RPI_GPIO_1);
     gpio_free(RPI_GPIO_2);
