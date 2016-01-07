@@ -369,7 +369,7 @@ rpigpio_minit(void)
 	}
 	printk(KERN_INFO "[gpio] %s Installed\n", RPIGPIO_MOD_NAME);
 
-	static int tick_scale = 6;
+	/*static int tick_scale = 6;
 
 	gpio_reg = (uint32_t *)ioremap(GPIO_BASE, GPIO_LEN);
 	dma_reg  = (uint32_t *)ioremap(DMA_BASE,  DMA_LEN);
@@ -387,10 +387,10 @@ rpigpio_minit(void)
 	clk_reg[PWMCLK_DIV] = 0x5A000000;
 	clk_reg[PWMCLK_CNTL] = 0x5A000001;              // Source=osc
 	clk_reg[PWMCLK_DIV] = 0x5A000000 | (32<<12);    // set pwm div to 32 (19.2MHz/32 = 600KHz)
-	udelay(10);					// Delay needed before enabling
+	udelay(600);					// Delay needed before enabling
 	clk_reg[PWMCLK_CNTL] = 0x5A000011;              // Source=osc and enable
 
-	udelay(10);
+	udelay(600);
 
 	pwm_reg[PWM_RNG1] = tick_scale;				// 600KHz/6 = 10us per FIFO write
 	udelay(10);
@@ -400,7 +400,7 @@ rpigpio_minit(void)
 	pwm_reg[PWM_CTL] = PWMCTL_CLRF;
 	udelay(10);
 	pwm_reg[PWM_CTL] = PWMCTL_USEF1 | PWMCTL_PWEN1;
-	udelay(10);
+	udelay(10);*/
 
 	printk(KERN_INFO "[pwm] %s Installed\n", RPIGPIO_MOD_NAME);
 
