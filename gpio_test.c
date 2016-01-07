@@ -50,12 +50,15 @@ static struct file_operations fops = {
 static ssize_t gpio_test_init (struct inode *inode, struct file *file)
 {
   printk("Driver perso ajouté\n");
-/*
+
   int err;
   int major = MAJOR(inode->i_rdev);
+  printk("Major ajouté\n");
   int ret;
   ret = register_chrdev(major, "gpio_test",&fops);
+  printk("Register chardevice\n");
 
+/*
   if ((err = gpio_request(RPI_GPIO_1,THIS_MODULE->name)) != 0)
     return err;
   if ((err = gpio_request(RPI_GPIO_2,THIS_MODULE->name)) != 0) {
