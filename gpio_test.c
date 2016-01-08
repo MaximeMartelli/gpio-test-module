@@ -426,12 +426,12 @@ rpigpio_mcleanup(void)
 
 	printk(KERN_NOTICE "[gpio] Removed\n");
 	
-	pwm_reg[PWM_CTL] = 0;
+	/*pwm_reg[PWM_CTL] = 0;
 	udelay(10);
 	iounmap(gpio_reg);
 	iounmap(dma_reg);
 	iounmap(clk_reg);
-	iounmap(pwm_reg);
+	iounmap(pwm_reg);*/
 }
 
 module_init(rpigpio_minit);
