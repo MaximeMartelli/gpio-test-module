@@ -11,52 +11,6 @@
 #include <asm-generic/uaccess.h>
 #include <linux/types.h>
 #include <linux/sched.h>
-#include <linux/string.h>
-#include <linux/io.h>
-#include <linux/vmalloc.h>
-#include <linux/cdev.h>
-#include <linux/scatterlist.h>
-#include <linux/delay.h>
-#include <linux/slab.h>
-#include <linux/timer.h>
-
-#define GPIO_LEN		0xb4
-#define DMA_LEN			0x24
-#define PWM_BASE		(BCM2708_PERI_BASE + 0x20C000)
-#define PWM_LEN			0x28
-#define CLK_BASE		(BCM2708_PERI_BASE + 0x101000)
-#define CLK_LEN			0xA8
-
-#define GPFSEL0			(0x00/4)
-#define GPFSEL1			(0x04/4)
-#define GPSET0			(0x1c/4)
-#define GPCLR0			(0x28/4)
-
-#define PWM_CTL			(0x00/4)
-#define PWM_STA			(0x04/4)
-#define PWM_DMAC		(0x08/4)
-#define PWM_RNG1		(0x10/4)
-#define PWM_FIFO		(0x18/4)
-
-#define PWMCLK_CNTL		40
-#define PWMCLK_DIV		41
-
-#define PWMCTL_MODE1	(1<<1)
-#define PWMCTL_PWEN1	(1<<0)
-#define PWMCTL_CLRF		(1<<6)
-#define PWMCTL_USEF1	(1<<5)
-
-#define PWMDMAC_ENAB	(1<<31)
-// I think this means it requests as soon as there is one free slot in the FIFO
-// which is what we want as burst DMA would mess up our timing..
-#define PWMDMAC_THRSHLD	((15<<8)|(15<<0))
-
-#define DMA_CS			(BCM2708_DMA_CS/4)
-#define DMA_CONBLK_AD	(BCM2708_DMA_ADDR/4)
-#define DMA_DEBUG		(BCM2708_DMA_DEBUG/4)
-
-#define BCM2708_DMA_END				(1<<1)	// Why is this not in mach/dma.h ?
-#define BCM2708_DMA_NO_WIDE_BURSTS	(1<<26)
 
 #define GPIO_IOC_MAGIC 'k'
 
@@ -91,10 +45,10 @@ struct gpio_data_mode {
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
-#define RPIGPIO_MOD_AUTH 	"Plouc"
+#define RPIGPIO_MOD_AUTH 	"Vu Nguyen"
 #define RPIGPIO_MOD_DESC 	"GPIO device driver for Raspberry Pi"
 #define RPIGPIO_MOD_SDEV 	"Raspberry Pi rev 2.0 model B"
-#define RPIGPIO_MOD_NAME 	"gpio_test"
+#define RPIGPIO_MOD_NAME 	"rpigpio"
 
 #define PIN_RESERVED 	1 	// reserved pins for system use
 #define PIN_FREE 		0 	// available pins for request
@@ -118,11 +72,6 @@ static struct rpigpio_dev std = {
 		.mjr = 0,
 		.cls = NULL,
 };
-
-static volatile uint32_t *gpio_reg;
-static volatile uint32_t *dma_reg;
-static volatile uint32_t *clk_reg;
-static volatile uint32_t *pwm_reg;
 
 static const struct file_operations rpigpio_fops = {
 		.owner	= 			THIS_MODULE,
@@ -369,41 +318,6 @@ rpigpio_minit(void)
 	}
 	printk(KERN_INFO "[gpio] %s Installed\n", RPIGPIO_MOD_NAME);
 
-	/*static int tick_scale = 6;
-
-	gpio_reg = (uint32_t *)ioremap(GPIO_BASE, GPIO_LEN);
-	dma_reg  = (uint32_t *)ioremap(DMA_BASE,  DMA_LEN);
-	clk_reg  = (uint32_t *)ioremap(CLK_BASE,  CLK_LEN);
-	pwm_reg  = (uint32_t *)ioremap(PWM_BASE,  PWM_LEN);
-
-	gpio_reg[GPCLR0] = 1 << 18;
-	gpio_reg[GPFSEL1] = (gpio_reg[GPFSEL1] & ~(7 << 8*3)) | ( 2 << 8*3);
-
-	pwm_reg[PWM_CTL] = 0;
-	udelay(10);
-	pwm_reg[PWM_STA] = pwm_reg[PWM_STA];
-	udelay(10);
-	clk_reg[PWMCLK_CNTL] = 0x5A000000;
-	clk_reg[PWMCLK_DIV] = 0x5A000000;
-	clk_reg[PWMCLK_CNTL] = 0x5A000001;              // Source=osc
-	clk_reg[PWMCLK_DIV] = 0x5A000000 | (32<<12);    // set pwm div to 32 (19.2MHz/32 = 600KHz)
-	udelay(600);					// Delay needed before enabling
-	clk_reg[PWMCLK_CNTL] = 0x5A000011;              // Source=osc and enable
-
-	udelay(600);
-
-	pwm_reg[PWM_RNG1] = tick_scale;				// 600KHz/6 = 10us per FIFO write
-	udelay(10);
-	//ctl->pwmdata = 1;					// Give a pulse of one clock width for each fifo write
-	pwm_reg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
-	udelay(10);
-	pwm_reg[PWM_CTL] = PWMCTL_CLRF;
-	udelay(10);
-	pwm_reg[PWM_CTL] = PWMCTL_USEF1 | PWMCTL_PWEN1;
-	udelay(10);*/
-
-	printk(KERN_INFO "[pwm] %s Installed\n", RPIGPIO_MOD_NAME);
-
 	return 0;
 }
 
@@ -425,13 +339,6 @@ rpigpio_mcleanup(void)
 	unregister_chrdev(std.mjr, RPIGPIO_MOD_NAME);
 
 	printk(KERN_NOTICE "[gpio] Removed\n");
-	
-	/*pwm_reg[PWM_CTL] = 0;
-	udelay(10);
-	iounmap(gpio_reg);
-	iounmap(dma_reg);
-	iounmap(clk_reg);
-	iounmap(pwm_reg);*/
 }
 
 module_init(rpigpio_minit);
