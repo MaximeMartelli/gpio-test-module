@@ -12,7 +12,6 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
-#include <linux/time.h>
 
 // Sortie sur broche 18 (GPIO 24)
 #define RPI_GPIO_OUT 24
@@ -89,25 +88,6 @@ static const struct file_operations rpigpio_fops = {
 		.unlocked_ioctl = 	rpigpio_ioctl,
 };
 
-static unsigned int last_interrupt_time = 0;
-static uint64_t epochMilli;
-
-static void r_int_config(void) {
-	struct timeval tv;
-	do_gettimeofday(&tv);
-	epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_T)(tv.tv_usec / 1000);
-}
-
-static unsigned int millis(void) {	
-	struct timeval tv;
-	uint64_t now;
-	
-	do_gettimeofday(@tv);
-	now = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_T)(tv.tv_usec / 1000);
-	
-	return (uint32_t)(now - epochMilli);
-}
-
 // Implementation of entry points
 static int
 rpigpio_open(struct inode*inode, struct file *filp)
@@ -145,14 +125,6 @@ rpigpio_release(struct inode *inode, struct file *filp)
 
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
-  unsigned int interrupt_time = millis();
-  
-  if (interrupt_time - last_interrupt_time < 1000) {
-  	return IRQ_HANDLED;  
-  }
-  last_interrupt_time = interrupt_time;
-  
-  
   static int value = 1;
   
   printk(KERN_INFO "[gpio] Value irq #%d\n", value);
@@ -172,9 +144,6 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	uint8_t val;
 	struct gpio_data_write wdata;
 	struct gpio_data_mode mdata;
-
-	r_int_config();
-	
 
 	switch (cmd) {
 	//case IRQ_GPIO:
@@ -379,8 +348,8 @@ rpigpio_minit(void)
 		std.pin_dir_arr[i] = DIRECTION_OUT;
 	}
 	
-	gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
-	gpio_direction_output(RPI_GPIO_OUT,1);
+	//gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
+	//gpio_direction_output(RPI_GPIO_OUT,1);
   
 	//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 
