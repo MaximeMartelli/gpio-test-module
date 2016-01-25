@@ -284,7 +284,7 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
   
   printk(KERN_INFO "[gpio] Value irq #%d\n", value);
   gpio_set_value(RPI_GPIO_OUT, value);
-  //value = 1 - value;
+  value = 1 - value;
 
   return IRQ_HANDLED;
 }
