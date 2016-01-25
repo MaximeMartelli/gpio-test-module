@@ -38,8 +38,9 @@ struct gpio_data_mode {
 struct gpio_irq {
 	int pin;
 	PIN_MODE_t data;
-	void* fct;
+	irqreturn_t* fct;
 };
+
 //in: pin to read //out: value //the value read on the pin
 #define GPIO_READ _IOWR(GPIO_IOC_MAGIC, 0x90, int)
 
@@ -58,7 +59,7 @@ struct gpio_irq {
 //in: struct (pin, mode[i/o])
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
 
-#define GPIO_IRQ _IOW(GPIO_IOC_MAGIC, 0x96, struct gpio_irq)
+#define GPIO_IRQ _IOWR(GPIO_IOC_MAGIC, 0x96, struct gpio_irq)
 
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
