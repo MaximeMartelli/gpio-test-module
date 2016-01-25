@@ -123,6 +123,18 @@ rpigpio_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
+static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
+{
+  static int value = 1;
+  
+  printk(KERN_INFO "[gpio] Value irq #%d\n", value);
+  gpio_set_value(RPI_GPIO_OUT, value);
+  value = 1 - value;
+
+  return IRQ_HANDLED;
+}
+
+
 static long
 rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 {
@@ -281,16 +293,7 @@ static char *st_devnode(struct device *dev, umode_t *mode)
 	return NULL;
 }
 
-static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
-{
-  static int value = 1;
-  
-  printk(KERN_INFO "[gpio] Value irq #%d\n", value);
-  gpio_set_value(RPI_GPIO_OUT, value);
-  value = 1 - value;
 
-  return IRQ_HANDLED;
-}
 
 
 static int __init
