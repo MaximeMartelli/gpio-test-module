@@ -90,6 +90,14 @@ static const struct file_operations rpigpio_fops = {
 };
 
 static unsigned int last_interrupt_time = 0;
+static uint64_t epochMilli;
+
+static void r_int_config(void) {
+	struct timeval tv;
+	do_gettimeofday(&tv);
+	epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_T)(tv.tv_usec / 1000);
+}
+
 static unsigned int millis(void) {	
 	struct timeval tv;
 	uint64_t now;
@@ -164,6 +172,9 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	uint8_t val;
 	struct gpio_data_write wdata;
 	struct gpio_data_mode mdata;
+
+	r_int_config();
+	
 
 	switch (cmd) {
 	//case IRQ_GPIO:
