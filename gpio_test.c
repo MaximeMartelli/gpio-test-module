@@ -342,6 +342,9 @@ rpigpio_minit(void)
 		std.pin_dir_arr[i] = DIRECTION_OUT;
 	}
 	
+	gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
+	gpio_direction_output(RPI_GPIO_OUT,1);
+  
 	request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 
 	
