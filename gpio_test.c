@@ -34,6 +34,12 @@ struct gpio_data_mode {
 	int pin;
 	PIN_MODE_t data;
 };
+
+struct gpio_irq {
+	int pin;
+	PIN_MODE_t data;
+	void* fct;
+};
 //in: pin to read //out: value //the value read on the pin
 #define GPIO_READ _IOWR(GPIO_IOC_MAGIC, 0x90, int)
 
@@ -51,6 +57,9 @@ struct gpio_data_mode {
 
 //in: struct (pin, mode[i/o])
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
+
+#define GPIO_IRQ _IOW(GPIO_IOC_MAGIC, 0x96, struct gpio_irq)
+
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
 #define RPIGPIO_MOD_AUTH 	"Max"
@@ -144,11 +153,19 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	uint8_t val;
 	struct gpio_data_write wdata;
 	struct gpio_data_mode mdata;
+	struct gpio_irq idata;
+
 
 	switch (cmd) {
-	//case IRQ_GPIO:
-		//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
-		//return 0;
+	case GPIO_IRQ:
+		ret = copy_from_user(&idata, (struct gpio_irq __user *)arg, sizeof(struct gpio_irq));
+		if (ret != 0) {
+			printk(KERN_DEBUG "[MODE] Error copying data from userspace\n");
+			return -EFAULT;
+		}
+		request_irq(gpio_to_irq(idata.pin), &(idata.fct), IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+		printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", idata.pin);
+		return 0;
 		
 	case GPIO_REQUEST:
 		get_user (pin, (int __user *) arg);
@@ -212,10 +229,11 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			std.pin_dir_arr[mdata.pin] = DIRECTION_OUT;
 			printk(KERN_DEBUG "[MODE] Pin %d set as Output\n", mdata.pin);
-		} else if (mdata.data == MODE_IRQ) {
+		} 
+		/*else if (mdata.data == MODE_IRQ) {
 			request_irq(gpio_to_irq(mdata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 			printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", mdata.pin);
-		} else {
+		}*/ else {
 			spin_unlock(&std.lock);
 			return -EINVAL;
 		}
