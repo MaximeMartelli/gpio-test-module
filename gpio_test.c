@@ -133,7 +133,7 @@ rpigpio_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static void* handler_test;
+static void (*handler_test)(void);
 
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
