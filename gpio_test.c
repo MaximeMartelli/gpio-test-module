@@ -12,6 +12,7 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
+#include <linux/time.h>
 
 // Sortie sur broche 18 (GPIO 24)
 #define RPI_GPIO_OUT 24
@@ -34,13 +35,6 @@ struct gpio_data_mode {
 	int pin;
 	PIN_MODE_t data;
 };
-
-struct gpio_irq {
-	int pin;
-	PIN_MODE_t data;
-	void* fct;
-};
-
 //in: pin to read //out: value //the value read on the pin
 #define GPIO_READ _IOWR(GPIO_IOC_MAGIC, 0x90, int)
 
@@ -58,9 +52,6 @@ struct gpio_irq {
 
 //in: struct (pin, mode[i/o])
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
-
-#define GPIO_IRQ _IOWR(GPIO_IOC_MAGIC, 0x96, struct gpio_irq)
-
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
 #define RPIGPIO_MOD_AUTH 	"Max"
@@ -98,6 +89,17 @@ static const struct file_operations rpigpio_fops = {
 		.unlocked_ioctl = 	rpigpio_ioctl,
 };
 
+static unsigned int last_interrupt_time = 0;
+static unsigned int millis(void) {	
+	struct timeval tv;
+	uint64_t now;
+	
+	do_gettimeofday(@tv);
+	now = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_T)(tv.tv_usec / 1000);
+	
+	return (uint32_t)(now - epochMilli);
+}
+
 // Implementation of entry points
 static int
 rpigpio_open(struct inode*inode, struct file *filp)
@@ -133,16 +135,21 @@ rpigpio_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static void (*handler_test)(void);
-
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
-  handler_test();
-  /*static int value = 1;
+  unsigned int interrupt_time = millis();
+  
+  if (interrupt_time - last_interrupt_time < 1000) {
+  	return IRQ_HANDLED;  
+  }
+  last_interrupt_time = interrupt_time;
+  
+  
+  static int value = 1;
   
   printk(KERN_INFO "[gpio] Value irq #%d\n", value);
   gpio_set_value(RPI_GPIO_OUT, value);
-  value = 1 - value;*/
+  value = 1 - value;
 
   return IRQ_HANDLED;
 }
@@ -157,20 +164,11 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	uint8_t val;
 	struct gpio_data_write wdata;
 	struct gpio_data_mode mdata;
-	struct gpio_irq idata;
-
 
 	switch (cmd) {
-	case GPIO_IRQ:
-		ret = copy_from_user(&idata, (struct gpio_irq __user *)arg, sizeof(struct gpio_irq));
-		if (ret != 0) {
-			printk(KERN_DEBUG "[MODE] Error copying data from userspace\n");
-			return -EFAULT;
-		}
-		handler_test = idata.fct;
-		request_irq(gpio_to_irq(idata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
-		printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", idata.pin);
-		return 0;
+	//case IRQ_GPIO:
+		//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+		//return 0;
 		
 	case GPIO_REQUEST:
 		get_user (pin, (int __user *) arg);
@@ -234,11 +232,10 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			std.pin_dir_arr[mdata.pin] = DIRECTION_OUT;
 			printk(KERN_DEBUG "[MODE] Pin %d set as Output\n", mdata.pin);
-		} 
-		/*else if (mdata.data == MODE_IRQ) {
+		} else if (mdata.data == MODE_IRQ) {
 			request_irq(gpio_to_irq(mdata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 			printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", mdata.pin);
-		}*/ else {
+		} else {
 			spin_unlock(&std.lock);
 			return -EINVAL;
 		}
@@ -371,8 +368,8 @@ rpigpio_minit(void)
 		std.pin_dir_arr[i] = DIRECTION_OUT;
 	}
 	
-	gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
-	gpio_direction_output(RPI_GPIO_OUT,1);
+	//gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
+	//gpio_direction_output(RPI_GPIO_OUT,1);
   
 	//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 
