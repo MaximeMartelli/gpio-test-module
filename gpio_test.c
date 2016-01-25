@@ -195,7 +195,7 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 			spin_unlock(&std.lock);
 			return -EACCES;
 		}
-
+		printk(KERN_DEBUG "[MODE] Pin %d mode %d\n", mdata.pin,mdata.data);
 		if(mdata.data == MODE_INPUT) {
 			retval = gpio_direction_input(mdata.pin);
 			if (retval < 0) {
