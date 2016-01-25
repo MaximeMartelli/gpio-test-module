@@ -38,7 +38,7 @@ struct gpio_data_mode {
 struct gpio_irq {
 	int pin;
 	PIN_MODE_t data;
-	irqreturn_t* fct;
+	void* fct;
 };
 
 //in: pin to read //out: value //the value read on the pin
@@ -133,13 +133,16 @@ rpigpio_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
+static void handler_test(void);
+
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
-  static int value = 1;
+  handler_test();
+  /*static int value = 1;
   
   printk(KERN_INFO "[gpio] Value irq #%d\n", value);
   gpio_set_value(RPI_GPIO_OUT, value);
-  value = 1 - value;
+  value = 1 - value;*/
 
   return IRQ_HANDLED;
 }
@@ -164,7 +167,8 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 			printk(KERN_DEBUG "[MODE] Error copying data from userspace\n");
 			return -EFAULT;
 		}
-		request_irq(gpio_to_irq(idata.pin), &(idata.fct), IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+		handler_test = idata.fct;
+		request_irq(gpio_to_irq(idata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 		printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", idata.pin);
 		return 0;
 		
