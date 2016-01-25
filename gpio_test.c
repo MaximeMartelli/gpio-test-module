@@ -11,6 +11,14 @@
 #include <asm-generic/uaccess.h>
 #include <linux/types.h>
 #include <linux/sched.h>
+#include <linux/interrupt.h>
+
+// Sortie sur broche 18 (GPIO 24)
+#define RPI_GPIO_OUT 24
+
+// Entree sur broche 16 (GPIO 23)
+#define RPI_GPIO_IN  23
+
 
 #define GPIO_IOC_MAGIC 'k'
 
@@ -45,7 +53,7 @@ struct gpio_data_mode {
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
-#define RPIGPIO_MOD_AUTH 	"Vu Nguyen"
+#define RPIGPIO_MOD_AUTH 	"Max"
 #define RPIGPIO_MOD_DESC 	"GPIO device driver for Raspberry Pi"
 #define RPIGPIO_MOD_SDEV 	"Raspberry Pi rev 2.0 model B"
 #define RPIGPIO_MOD_NAME 	"rpigpio"
@@ -126,6 +134,10 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	struct gpio_data_mode mdata;
 
 	switch (cmd) {
+	//case IRQ_GPIO:
+		//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+		//return 0;
+		
 	case GPIO_REQUEST:
 		get_user (pin, (int __user *) arg);
 		spin_lock(&std.lock);
@@ -138,6 +150,7 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 		}
 		std.pin_state_arr[pin] = current->pid;
 		spin_unlock(&std.lock);
+
 		printk(KERN_DEBUG "[REQUEST] Pin:%d Assn To:%d\n", pin, current->pid);
 		return 0;
 
@@ -265,6 +278,17 @@ static char *st_devnode(struct device *dev, umode_t *mode)
 	return NULL;
 }
 
+static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
+{
+  static int value = 1;
+
+  gpio_set_value(RPI_GPIO_OUT, value);
+  value = 1 - value;
+
+  return IRQ_HANDLED;
+}
+
+
 static int __init
 rpigpio_minit(void)
 {
@@ -316,6 +340,10 @@ rpigpio_minit(void)
 		}
 		std.pin_dir_arr[i] = DIRECTION_OUT;
 	}
+	
+	request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+
+	
 	printk(KERN_INFO "[gpio] %s Installed\n", RPIGPIO_MOD_NAME);
 
 	return 0;
@@ -334,6 +362,7 @@ rpigpio_mcleanup(void)
 			gpio_free(i);
 		}
 	}
+	free_irq(gpio_to_irq(RPI_GPIO_IN), THIS_MODULE->name);
 	device_destroy(std.cls, MKDEV(std.mjr, 0));
 	class_destroy(std.cls);
 	unregister_chrdev(std.mjr, RPIGPIO_MOD_NAME);
