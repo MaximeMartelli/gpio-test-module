@@ -22,7 +22,7 @@
 
 #define GPIO_IOC_MAGIC 'k'
 
-typedef enum {MODE_INPUT=0, MODE_OUTPUT} PIN_MODE_t;
+typedef enum {MODE_INPUT=0, MODE_OUTPUT, MODE_IRQ} PIN_MODE_t;
 typedef enum {DIRECTION_IN = 0, DIRECTION_OUT} PIN_DIRECTION_t;
 
 struct gpio_data_write {
@@ -200,6 +200,9 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			std.pin_dir_arr[mdata.pin] = DIRECTION_OUT;
 			printk(KERN_DEBUG "[MODE] Pin %d set as Output\n", mdata.pin);
+		} else if (mdata.data == MODE_IRQ) {
+			request_irq(gpio_to_irq(mdata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+			printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", mdata.pin);
 		} else {
 			spin_unlock(&std.lock);
 			return -EINVAL;
@@ -345,7 +348,7 @@ rpigpio_minit(void)
 	gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
 	gpio_direction_output(RPI_GPIO_OUT,1);
   
-	request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+	//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
 
 	
 	printk(KERN_INFO "[gpio] %s Installed\n", RPIGPIO_MOD_NAME);
