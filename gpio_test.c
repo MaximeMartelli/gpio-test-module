@@ -239,15 +239,11 @@ rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	uint8_t val;
 	struct gpio_data_write wdata;
 	struct gpio_data_mode mdata;
-	printk(KERN_INFO "[Mode] Choix du mode\n");
 
 	switch (cmd) {
 	case GPIO_PID:
-		printk(KERN_INFO "[PID] Pid User\n");
-
 		get_user(pid_user, (int __user *) arg);
-
-		printk(KERN_INFO "[PID] Pid User : %d\n", pid_user);
+		printk(KERN_INFO "[PID] Pid reçu : %d\n", pid_user);
 
 		return 0;
 		
@@ -332,34 +328,28 @@ rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	case GPIO_WRITE:
 		ret = copy_from_user(&wdata, (struct gpio_data_write __user *)arg, sizeof(struct gpio_data_write));
-		printk(KERN_INFO "[PID] Wdata : %d\n", wdata.data);
 
 		if (ret != 0) {
 			printk(KERN_DEBUG "[WRITE] Error copying data from userspace\n");
 			return -EFAULT;
 		}
-		if (wdata.data == 3) {
-			pid_user = wdata.pin;
-			printk(KERN_INFO "[PID] Pid User : %d\n", pid_user);
-		}
-		else {
-			spin_lock(&std.lock);
-			if (std.pin_state_arr[wdata.pin] != current->pid) {
-				spin_unlock(&std.lock);
-				return -EACCES;
-			}
-			if (std.pin_dir_arr[wdata.pin] == DIRECTION_IN) {
-				printk(KERN_DEBUG "Cannot set Input pin\n");
-				spin_unlock(&std.lock);
-				return -EACCES;
-			}
-			if (wdata.data == 1)
-				gpio_set_value(wdata.pin, 1);
-			else
-				gpio_set_value(wdata.pin, 0);
+		spin_lock(&std.lock);
+		if (std.pin_state_arr[wdata.pin] != current->pid) {
 			spin_unlock(&std.lock);
-			printk(KERN_INFO "[WRITE] Pin: %d Val:%d\n", wdata.pin, wdata.data);
+			return -EACCES;
 		}
+		if (std.pin_dir_arr[wdata.pin] == DIRECTION_IN) {
+			printk(KERN_DEBUG "Cannot set Input pin\n");
+			spin_unlock(&std.lock);
+			return -EACCES;
+		}
+		if (wdata.data == 1)
+			gpio_set_value(wdata.pin, 1);
+		else
+			gpio_set_value(wdata.pin, 0);
+		spin_unlock(&std.lock);
+		printk(KERN_INFO "[WRITE] Pin: %d Val:%d\n", wdata.pin, wdata.data);
+		
 		return 0;
 
 	case GPIO_TOGGLE:
@@ -456,13 +446,7 @@ rpigpio_minit(void)
 		std.pin_dir_arr[i] = DIRECTION_OUT;
 	}
 	
-	//gpio_request(RPI_GPIO_OUT, THIS_MODULE->name);
-	//gpio_direction_output(RPI_GPIO_OUT,1);
-  
-	//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
-
-	
-	printk(KERN_INFO "[gpio] %s Installed\n", RPIGPIO_MOD_NAME);
+	printk(KERN_INFO "[gpio] %s Installé\n", RPIGPIO_MOD_NAME);
 
 	return 0;
 }
@@ -485,7 +469,7 @@ rpigpio_mcleanup(void)
 	class_destroy(std.cls);
 	unregister_chrdev(std.mjr, RPIGPIO_MOD_NAME);
 
-	printk(KERN_NOTICE "[gpio] Removed\n");
+	printk(KERN_NOTICE "[gpio] retiré\n");
 }
 
 module_init(rpigpio_minit);
