@@ -182,7 +182,7 @@ rpigpio_release(struct inode *inode, struct file *filp)
 
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
-	static int value = 1;
+	//static int value = 1;
 		
 	int ret;
 	struct siginfo info;
@@ -196,9 +196,9 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 	last_interrupt_time = interrupt_time;
 
   
-	printk(KERN_INFO "[gpio] Value irq #%d\n", value);
-	gpio_set_value(RPI_GPIO_OUT, value);
-	value = 1 - value;
+	//printk(KERN_INFO "[gpio] Value irq #%d\n", value);
+	//gpio_set_value(RPI_GPIO_OUT, value);
+	//value = 1 - value;
 
 	/* send the signal */
 	memset(&info, 0, sizeof(struct siginfo));
