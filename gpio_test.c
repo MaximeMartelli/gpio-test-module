@@ -183,6 +183,12 @@ rpigpio_release(struct inode *inode, struct file *filp)
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
 	static int value = 1;
+		
+	int ret;
+	struct siginfo info;
+	struct task_struct *t;
+	struct pid *pid_struct;
+	
 	unsigned int interrupt_time = millis();
 	if (interrupt_time - last_interrupt_time < 200) 
     	return IRQ_HANDLED;
@@ -193,10 +199,7 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 	printk(KERN_INFO "[gpio] Value irq #%d\n", value);
 	gpio_set_value(RPI_GPIO_OUT, value);
 	value = 1 - value;
-	
-	int ret;
-	struct siginfo info;
-	struct task_struct *t;
+
 	/* send the signal */
 	memset(&info, 0, sizeof(struct siginfo));
 	info.si_signo = SIG_TEST;
@@ -206,7 +209,11 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 	info.si_int = 1234;  		//real time signals may have 32 bits of data.
 
 	rcu_read_lock();
-	t = find_task_by_pid_type(PIDTYPE_PID, pid_user);  //find the task_struct associated with this pid
+	
+	pid_struct = find_get_pid(pid_user);
+	t = pid_task(pid_struct,PIDTYPE_PID);
+	
+	//t = find_task_by_pid_type(PIDTYPE_PID, pid_user);  //find the task_struct associated with this pid
 	if(t == NULL){
 		printk("no such pid\n");
 		rcu_read_unlock();
