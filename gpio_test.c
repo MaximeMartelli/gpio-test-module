@@ -81,7 +81,7 @@ struct gpio_pid {
 //in: struct (pin, mode[i/o])
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
 
-#define GPIO_PID _IOWR(GPIO_IOC_MAGIC, 0x96, struct gpio_pid)
+#define GPIO_PID _IOW(GPIO_IOC_MAGIC, 0x96, struct gpio_pid)
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
 #define RPIGPIO_MOD_AUTH 	"Max"
@@ -231,7 +231,7 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 }
 
 static long
-rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
+rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int pin;
 	unsigned long ret;
@@ -336,23 +336,28 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 			printk(KERN_DEBUG "[WRITE] Error copying data from userspace\n");
 			return -EFAULT;
 		}
-		spin_lock(&std.lock);
-		if (std.pin_state_arr[wdata.pin] != current->pid) {
-			spin_unlock(&std.lock);
-			return -EACCES;
+		if (wdata.data == 3) {
+			pid_user = wdata.pin;
+			printk(KERN_INFO "[PID] Pid User : %d\n", pid_user);
 		}
-		if (std.pin_dir_arr[wdata.pin] == DIRECTION_IN) {
-			printk(KERN_DEBUG "Cannot set Input pin\n");
+		else {
+			spin_lock(&std.lock);
+			if (std.pin_state_arr[wdata.pin] != current->pid) {
+				spin_unlock(&std.lock);
+				return -EACCES;
+			}
+			if (std.pin_dir_arr[wdata.pin] == DIRECTION_IN) {
+				printk(KERN_DEBUG "Cannot set Input pin\n");
+				spin_unlock(&std.lock);
+				return -EACCES;
+			}
+			if (wdata.data == 1)
+				gpio_set_value(wdata.pin, 1);
+			else
+				gpio_set_value(wdata.pin, 0);
 			spin_unlock(&std.lock);
-			return -EACCES;
+			printk(KERN_INFO "[WRITE] Pin: %d Val:%d\n", wdata.pin, wdata.data);
 		}
-		if (wdata.data == 1)
-			gpio_set_value(wdata.pin, 1);
-		else
-			gpio_set_value(wdata.pin, 0);
-		spin_unlock(&std.lock);
-		printk(KERN_INFO "[WRITE] Pin: %d Val:%d\n", wdata.pin, wdata.data);
-
 		return 0;
 
 	case GPIO_TOGGLE:
