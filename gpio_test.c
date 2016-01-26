@@ -165,7 +165,7 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
 	static int value = 1;
 	unsigned int interrupt_time = millis();
-	if (interrupt_time - last_interrupt_time < 1000) 
+	if (interrupt_time - last_interrupt_time < 100) 
     	return IRQ_HANDLED;
   
 	last_interrupt_time = interrupt_time;
