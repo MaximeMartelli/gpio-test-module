@@ -163,12 +163,13 @@ rpigpio_release(struct inode *inode, struct file *filp)
 
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
+	static int value = 1;
+	unsigned int interrupt_time = millis();
 	if (interrupt_time - last_interrupt_time < 1000) 
     	return IRQ_HANDLED;
   
 	last_interrupt_time = interrupt_time;
 
-	static int value = 1;
   
 	printk(KERN_INFO "[gpio] Value irq #%d\n", value);
 	gpio_set_value(RPI_GPIO_OUT, value);
