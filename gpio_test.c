@@ -310,7 +310,7 @@ rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			std.pin_dir_arr[mdata.pin] = DIRECTION_OUT;
 			printk(KERN_DEBUG "[MODE] Pin %d set as Output\n", mdata.pin);
 		} else if (mdata.data == MODE_IRQ) {
-			request_irq(gpio_to_irq(mdata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
+			request_irq(gpio_to_irq(mdata.pin), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING, THIS_MODULE->name, THIS_MODULE->name);
 			printk(KERN_DEBUG "[MODE] Pin %d déclenchement IRQ\n", mdata.pin);
 		} else {
 			spin_unlock(&std.lock);
