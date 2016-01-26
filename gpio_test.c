@@ -35,7 +35,7 @@
 #define SIG_TEST 44	// we choose 44 as our signal number (real-time signals are in the range of 33 to 64)
 
 struct dentry *file;
-int pid_user;
+int pid_user=98;
 
 
 // Sortie sur broche 18 (GPIO 24)
@@ -209,7 +209,8 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 	info.si_int = 1234;  		//real time signals may have 32 bits of data.
 
 	rcu_read_lock();
-	
+	printk(KERN_INFO "[PID] Value pid :%d\n", pid_user);
+
 	pid_struct = find_get_pid(pid_user);
 	t = pid_task(pid_struct,PIDTYPE_PID);
 	
@@ -238,10 +239,14 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	uint8_t val;
 	struct gpio_data_write wdata;
 	struct gpio_data_mode mdata;
+	printk(KERN_INFO "[Mode] Choix du mode\n");
 
 	switch (cmd) {
 	case GPIO_PID:
+		printk(KERN_INFO "[PID] Pid User\n");
+
 		get_user(pid_user, (int __user *) arg);
+
 		printk(KERN_INFO "[PID] Pid User : %d\n", pid_user);
 
 		return 0;
