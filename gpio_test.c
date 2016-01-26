@@ -26,6 +26,16 @@
 #include <linux/platform_device.h>
 #include <linux/time.h>
 
+#include <asm/siginfo.h>	//siginfo
+#include <linux/rcupdate.h>	//rcu_read_lock
+#include <linux/debugfs.h>
+#include <linux/uaccess.h>
+
+
+#define SIG_TEST 44	// we choose 44 as our signal number (real-time signals are in the range of 33 to 64)
+
+struct dentry *file;
+
 // Sortie sur broche 18 (GPIO 24)
 #define RPI_GPIO_OUT 24
 
@@ -78,6 +88,7 @@ struct gpio_data_mode {
 static int rpigpio_open(struct inode *inode, struct file *filp);
 static int rpigpio_release(struct inode *inode, struct file *filp);
 static long rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
+//static ssize_t write_pid(struct file *file, const char __user *buf, size_t count, loff_t *ppos);
 
 // Global variables
 static int deviceOpenCounter = 0;
@@ -174,9 +185,38 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 	printk(KERN_INFO "[gpio] Value irq #%d\n", value);
 	gpio_set_value(RPI_GPIO_OUT, value);
 	value = 1 - value;
+	
+	
+	char mybuf[10];
+	int ret;
+	struct siginfo info;
+	struct task_struct *t;
+	/* send the signal */
+	memset(&info, 0, sizeof(struct siginfo));
+	info.si_signo = SIG_TEST;
+	info.si_code = SI_QUEUE;	// this is bit of a trickery: SI_QUEUE is normally used by sigqueue from user space,
+					// and kernel space should use SI_KERNEL. But if SI_KERNEL is used the real_time data 
+					// is not delivered to the user space signal handler function. 
+	info.si_int = 1234;  		//real time signals may have 32 bits of data.
 
+	rcu_read_lock();
+	t = find_task_by_pid_type(PIDTYPE_PID, pid_user);  //find the task_struct associated with this pid
+	if(t == NULL){
+		printk("no such pid\n");
+		rcu_read_unlock();
+		return -ENODEV;
+	}
+	rcu_read_unlock();
+	ret = send_sig_info(SIG_TEST, &info, t);    //send the signal
+	if (ret < 0) {
+		printk("error sending signal\n");
+		return ret;
+	}
+		
   return IRQ_HANDLED;
 }
+
+int pid_user;
 
 
 static long
@@ -190,9 +230,53 @@ rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
 	struct gpio_data_mode mdata;
 
 	switch (cmd) {
-	//case IRQ_GPIO:
-		//request_irq(gpio_to_irq(RPI_GPIO_IN), rpi_gpio_2_handler, IRQF_SHARED | IRQF_TRIGGER_RISING, THIS_MODULE->name, THIS_MODULE->name);
-		//return 0;
+	case GPIO_PID:
+		get_user(pid_user, (int __user *) arg);
+		
+		/*
+static ssize_t write_pid(struct file *file, const char __user *buf,
+                                size_t count, loff_t *ppos)
+{
+	char mybuf[10];
+	int pid = 0;
+	int ret;
+	struct siginfo info;
+	struct task_struct *t;
+	// read the value from user space 
+	if(count > 10)
+		return -EINVAL;
+	copy_from_user(mybuf, buf, count);
+	sscanf(mybuf, "%d", &pid);
+	printk("pid = %d\n", pid);*/
+
+	/* send the signal */
+	/*
+	memset(&info, 0, sizeof(struct siginfo));
+	info.si_signo = SIG_TEST;
+	info.si_code = SI_QUEUE;	// this is bit of a trickery: SI_QUEUE is normally used by sigqueue from user space,
+					// and kernel space should use SI_KERNEL. But if SI_KERNEL is used the real_time data 
+					// is not delivered to the user space signal handler function. 
+	info.si_int = 1234;  		//real time signals may have 32 bits of data.
+
+	rcu_read_lock();
+	t = find_task_by_pid_type(PIDTYPE_PID, pid);  //find the task_struct associated with this pid
+	if(t == NULL){
+		printk("no such pid\n");
+		rcu_read_unlock();
+		return -ENODEV;
+	}
+	rcu_read_unlock();
+	ret = send_sig_info(SIG_TEST, &info, t);    //send the signal
+	if (ret < 0) {
+		printk("error sending signal\n");
+		return ret;
+	}
+	return count;
+}*/
+		
+		
+
+		return 0;
 		
 	case GPIO_REQUEST:
 		get_user (pin, (int __user *) arg);
