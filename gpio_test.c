@@ -13,6 +13,19 @@
 #include <linux/sched.h>
 #include <linux/interrupt.h>
 
+
+#include <linux/string.h>    
+#include <linux/init.h>
+#include <linux/cdev.h>
+#include <linux/errno.h>
+#include <linux/io.h>
+
+#include <linux/list.h>
+#include <linux/irq.h>
+#include <linux/slab.h>
+#include <linux/platform_device.h>
+#include <linux/time.h>
+
 // Sortie sur broche 18 (GPIO 24)
 #define RPI_GPIO_OUT 24
 
@@ -88,6 +101,31 @@ static const struct file_operations rpigpio_fops = {
 		.unlocked_ioctl = 	rpigpio_ioctl,
 };
 
+
+// Fonctions temporelles
+unsigned int last_interrupt_time = 0;
+static uint64_t epochMilli;
+
+unsigned int millis (void)
+{
+  struct timeval tv ;
+  uint64_t now ;
+
+  do_gettimeofday(&tv) ;
+  now  = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_t)(tv.tv_usec / 1000) ;
+
+  return (uint32_t)(now - epochMilli) ;
+}
+
+void r_int_config(void) {
+
+  struct timeval tv ;
+
+  do_gettimeofday(&tv) ;
+  epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000    + (uint64_t)(tv.tv_usec / 1000) ;
+}
+
+
 // Implementation of entry points
 static int
 rpigpio_open(struct inode*inode, struct file *filp)
@@ -125,11 +163,16 @@ rpigpio_release(struct inode *inode, struct file *filp)
 
 static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 {
-  static int value = 1;
+	if (interrupt_time - last_interrupt_time < 1000) 
+    	return IRQ_HANDLED;
   
-  printk(KERN_INFO "[gpio] Value irq #%d\n", value);
-  gpio_set_value(RPI_GPIO_OUT, value);
-  value = 1 - value;
+	last_interrupt_time = interrupt_time;
+
+	static int value = 1;
+  
+	printk(KERN_INFO "[gpio] Value irq #%d\n", value);
+	gpio_set_value(RPI_GPIO_OUT, value);
+	value = 1 - value;
 
   return IRQ_HANDLED;
 }
