@@ -35,7 +35,7 @@
 #define SIG_TEST 44	// we choose 44 as our signal number (real-time signals are in the range of 33 to 64)
 
 struct dentry *file;
-int pid_user=98;
+static int pid_user = 98;
 
 
 // Sortie sur broche 18 (GPIO 24)
@@ -332,6 +332,8 @@ rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	case GPIO_WRITE:
 		ret = copy_from_user(&wdata, (struct gpio_data_write __user *)arg, sizeof(struct gpio_data_write));
+		printk(KERN_INFO "[PID] Wdata : %d\n", wdata.data);
+
 		if (ret != 0) {
 			printk(KERN_DEBUG "[WRITE] Error copying data from userspace\n");
 			return -EFAULT;
