@@ -8,7 +8,7 @@
 #include <uapi/asm-generic/errno-base.h>
 #include <linux/ioctl.h>
 #include <linux/gpio.h>
-#include <asm-generic/uaccess.h>
+//#include <asm-generic/uaccess.h>
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
@@ -35,6 +35,8 @@
 #define SIG_TEST 44	// we choose 44 as our signal number (real-time signals are in the range of 33 to 64)
 
 struct dentry *file;
+int pid_user;
+
 
 // Sortie sur broche 18 (GPIO 24)
 #define RPI_GPIO_OUT 24
@@ -57,6 +59,10 @@ struct gpio_data_mode {
 	int pin;
 	PIN_MODE_t data;
 };
+
+struct gpio_pid {
+	int pid;
+};
 //in: pin to read //out: value //the value read on the pin
 #define GPIO_READ _IOWR(GPIO_IOC_MAGIC, 0x90, int)
 
@@ -74,6 +80,8 @@ struct gpio_data_mode {
 
 //in: struct (pin, mode[i/o])
 #define GPIO_MODE _IOW(GPIO_IOC_MAGIC, 0x95, struct gpio_data_mode)
+
+#define GPIO_PID _IOWR(GPIO_IOC_MAGIC, 0x96, struct gpio_pid)
 
 // Prefix "rpigpio_ / RPIGPIO_" is used in this module to avoid name pollution
 #define RPIGPIO_MOD_AUTH 	"Max"
@@ -186,8 +194,6 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 	gpio_set_value(RPI_GPIO_OUT, value);
 	value = 1 - value;
 	
-	
-	char mybuf[10];
 	int ret;
 	struct siginfo info;
 	struct task_struct *t;
@@ -215,9 +221,6 @@ static irqreturn_t rpi_gpio_2_handler(int irq, void * ident)
 		
   return IRQ_HANDLED;
 }
-
-int pid_user;
-
 
 static long
 rpigpio_ioctl(	struct file *filp, unsigned int cmd, unsigned long arg)
