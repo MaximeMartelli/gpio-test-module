@@ -302,7 +302,7 @@ rpigpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			std.pin_dir_arr[mdata.pin] = DIRECTION_IN;
 			printk(KERN_DEBUG "[MODE] Pin %d set as Input\n", mdata.pin);
 		} else if (mdata.data == MODE_OUTPUT) {
-			retval = gpio_direction_output(mdata.pin, 1);
+			retval = gpio_direction_output(mdata.pin, 0);
 			if (retval < 0) {
 				spin_unlock(&std.lock);
 				return retval;
